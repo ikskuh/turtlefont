@@ -16,6 +16,7 @@ struct tpainter
 static struct tpainter painter;
 
 static int fontSize = 16;
+static int dotSize = 0;
 
 static void put(int x, int y)
 {
@@ -88,11 +89,13 @@ static void line(int x0, int y0, int x1, int y1)
 
 static void dot(int x, int y)
 {
-	put(x,y);
-	put(x-1,y);
-	put(x,y-1);
-	put(x+1,y);
-	put(x,y+1);
+	for(int dy = -dotSize; dy <= dotSize; dy++) { 
+		for(int dx = -dotSize; dx <= dotSize; dx++) {
+			if(dx*dx + dy*dy <= dotSize*dotSize) {
+				put(x + dx, y + dy);
+			}
+		}
+	}
 }
 
 int scale(int v)
@@ -195,9 +198,15 @@ int tfont_render(int tx, int ty, char const *code)
 
 
 
+static int max(int a, int b)
+{
+	if(a > b)
+		return a;
+	else
+		return b;
+}
 
-
-void tfont_setSize(int size) { fontSize = size; }
+void tfont_setSize(int size) { fontSize = max(8, size); }
 
 int tfont_getSize() { return fontSize; }
 
@@ -206,3 +215,7 @@ void tfont_setPainter(tfont_put put, void *arg)
 	painter.put = put;
 	painter.arg = arg;
 }
+
+void tfont_setDotSize(int size) { dotSize = max(size - 1, 0); }
+
+int tfont_getDotSize() { return dotSize; }

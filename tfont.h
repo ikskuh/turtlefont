@@ -6,6 +6,10 @@ void tfont_setSize(int size);
 
 int tfont_getSize();
 
+void tfont_setDotSize(int size);
+
+int tfont_getDotSize();
+
 void tfont_setPainter(tfont_put put, void *arg);
 
 int tfont_width(char const *code);

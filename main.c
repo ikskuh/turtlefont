@@ -99,7 +99,8 @@ int main(int argc, const char **argv)
 
 	yellow = SDL_MapRGB(screen->format, 0xff, 0xff, 0x00);
 	
-	tfont_setSize(32);
+	tfont_setSize(8);
+	tfont_setDotSize(0);
 	tfont_setPainter(&tfput, NULL);
 	
 	load("test.tfn");
