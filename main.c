@@ -53,7 +53,7 @@ void tfput(int x, int y, void *arg)
 	SDL_UpdateRect(screen, x, y, 1, 1);
 	
 	// Uncomment for epic
-	// SDL_Delay(3);
+	// SDL_Delay(4);
 }
 
 struct glyph
@@ -105,12 +105,18 @@ int main(int argc, const char **argv)
 	
 	load("test.tfn");
 	
+	for(int i = 33; i < 127; i++) {
+		printf("%c", i);
+	}
+	printf("\n");
+	
 	char *testText = 
 		"prall vom whisky flog quax den\njet zu bruch.\n"
 		"PRALL VOM WHISKY FLOG QUAX DEN\nJET ZU BRUCH.\n"
 		"Prall vom Whisky flog Quax den\nJet zu Bruch.\n"
 		"(a) {a} [a]\n"
 		"0123456789\n"
+		"!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
 	;
 	
 	int x = 8;
