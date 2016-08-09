@@ -197,12 +197,18 @@ int tfont_render_glyph(int tx, int ty, char const *code)
 
 int tfont_render_string(int sx, int sy, char const *text, int maxWidth, enum tfont_option flags)
 {
+	if(getGlyph == NULL) {
+		return 0;
+	}
 	int x = sx;
 	int y = sy;
 	
 	while(*text)
 	{
 		char c = *text++;
+		if(c == 0) {
+			break;
+		}
 		if(c == '\n') {
 			x = sx;
 			y += tfont_getLineHeight();
