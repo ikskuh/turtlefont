@@ -1,5 +1,6 @@
 #include "tfont.h"
 
+#include <stddef.h>
 #include <stdbool.h>
 
 #if TFONT_DEBUG
@@ -17,6 +18,8 @@ static struct tpainter painter;
 static int fontSize = 16;
 static int dotSize = 0;
 static float lineSpacing = 1.2;
+
+static tfont_getglyph getGlyph = NULL;
 
 static int abs(int x)
 {
@@ -132,7 +135,7 @@ int tfont_width(char const *code)
 	return 0;
 }
 
-int tfont_render(int tx, int ty, char const *code)
+int tfont_render_glyph(int tx, int ty, char const *code)
 {
 	int advance = 0;
 	int x = 0;
@@ -192,6 +195,34 @@ int tfont_render(int tx, int ty, char const *code)
 	return scalex(advance);
 }
 
+int tfont_render_string(int sx, int sy, char const *text, int maxWidth, enum tfont_option flags)
+{
+	int x = sx;
+	int y = sy;
+	
+	while(*text)
+	{
+		char c = *text++;
+		if(c == '\n') {
+			x = sx;
+			y += tfont_getLineHeight();
+		} else {
+			const char *glyph = getGlyph(c);
+			if(glyph != NULL) {
+				if(maxWidth > 0) {
+					if(x + tfont_width(glyph) >= maxWidth ) {
+						x = sx;
+						y += tfont_getLineHeight();
+					}	
+				}
+				x += tfont_render_glyph(x, y, glyph);
+			}
+		}
+		
+	}
+	return y - sy + tfont_getLineHeight();
+}
+
 static int max(int a, int b)
 {
 	if(a > b)
@@ -221,4 +252,9 @@ float tfont_getLineSpacing() { return lineSpacing; }
 int tfont_getLineHeight()
 {
 	return lineSpacing * (float)fontSize * 1.25;
+}
+
+void tfont_setFont(tfont_getglyph fptr)
+{
+	getGlyph = fptr;
 }

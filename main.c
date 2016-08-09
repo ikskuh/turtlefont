@@ -8,8 +8,6 @@
 // Press plus/minus to change font size.
 // Any key refreshes the font file and code.
 
-// A: B m0,4 m1,1 m2,0 m1,-1 m0,-4 EM0,2Bm4,0
-
 SDL_Surface *screen;
 uint32_t yellow;
 
@@ -126,7 +124,7 @@ void render()
 					x = 8;
 					y += tfont_getLineHeight();
 				}	
-				x += tfont_render(x, y, font[c].code);
+				x += tfont_render_glyph(x, y, font[c].code);
 			}
 		}
 	}
