@@ -1,5 +1,19 @@
+ :a2
 a:a6 M46 p0-4 p-30 p-11 p02 p11 p20 p1-1
 b:a6 M0A p0-8 p30 p11 p02 p-11 p-20 p-1-1
 c:a6 M45 p-11 p-20 p-1-1 p0-2 p1-1 p20 p11
 d:a6 M4A p0-8 m01 p-1-1 p-20 p-11 p02 p11 p20 p1-1
-e:a6 M02 p40 p01 p-11 p-20 p-1-1 p0-2 p1-1 p20 p11
+e:a6 M04 p40 p01 p-11 p-20 p-1-1 p0-2 p1-1 p20 p11
+f:a4 M12 p07 p11 M06 p20
+g:a6 M43 p-1-1 p-20 p-11 p02 p11 p20 p1-1 p0-4 p-1-1 p-20 p-11
+h:a6 M0A P02 M06 p30 p1-1 p0-3
+i:a2 M02 P06 M08 d
+j:a2 M06 p0-4 p-1-1 M08 d
+k:a4 M02 P0A M03 p33 M14 p2-2
+l:a4 M0A P03 p1-1 p10
+m:a8 M02 P06 M05 p11 p10 p1-1 p0-3 m03 p11 p10 p1-1 p0-3
+n:a6 M02 P06 M05 p11 p10 p1-1 p0-3
+o:a6 M03 p02 p11 p20 p1-1 p0-2 p-1-1 p-20 p-11
+p:a6 M00 P06 M03 p1-1 p20 p11 p02 p-11 p-20 p-1-1
+q:a6 M40 P46 M43 p-1-1 p-20 p-11 p02 p11 p20 p1-1
+r:a5 M02 P06 M05 p11 p10 p1-1

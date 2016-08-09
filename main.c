@@ -51,6 +51,9 @@ void tfput(int x, int y, void *arg)
 {
 	putpixel(screen, x, y, yellow);
 	SDL_UpdateRect(screen, x, y, 1, 1);
+	
+	// Uncomment for epic
+	// SDL_Delay(3);
 }
 
 struct glyph
@@ -103,8 +106,10 @@ int main(int argc, const char **argv)
 	
 	char *testText = "prall vom whisky flog quax den jet zu bruch.";
 	
-	int x = 0;
-	int y = tfont_getSize();
+	int x = 4;
+	int y = 4 + tfont_getSize();
+	
+	printf("%s\n", testText);
 	
 	while(*testText)
 	{

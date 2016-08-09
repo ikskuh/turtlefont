@@ -19,8 +19,9 @@ static int fontSize = 16;
 
 static void put(int x, int y)
 {
-	if(painter.put)
+	if(painter.put) {
 		painter.put(x, y, painter.arg);
+	}
 }
 
 char sgetrawc(char const **code)
@@ -85,11 +86,23 @@ static void line(int x0, int y0, int x1, int y1)
   }
 }
 
+static void dot(int x, int y)
+{
+	put(x,y);
+	put(x-1,y);
+	put(x,y-1);
+	put(x+1,y);
+	put(x,y+1);
+}
+
 int scale(int v)
 {
 	// return fontSize * v / 16;
-	return (float)fontSize * v / 10.0;
+	return (float)fontSize * v / 8.0;
 }
+
+int scalex(int x) { return scale(x); }
+int scaley(int y) { return scale(y - 2); }
 
 int tfont_render(int tx, int ty, char const *code)
 {
@@ -121,20 +134,24 @@ int tfont_render(int tx, int ty, char const *code)
 				x = sgetn(&code);
 				y = sgetn(&code);
 				line(
-					tx + scale(px), 
-					ty - scale(py), 
-					tx + scale(x), 
-					ty - scale(y));
+					tx + scalex(px), 
+					ty - scaley(py), 
+					tx + scalex(x), 
+					ty - scaley(y));
 				break;
 			case 'p':
 				x += sgetn(&code);
 				y += sgetn(&code);
 				line(
-					tx + scale(px), 
-					ty - scale(py), 
-					tx + scale(x), 
-					ty - scale(y));
+					tx + scalex(px),
+					ty - scaley(py), 
+					tx + scalex(x), 
+					ty - scaley(y));
 				break;
+			case 'd':
+				dot(
+					tx + scalex(x),
+					ty - scaley(y));
 			default:
 #if TFONT_DEBUG
 				printf("Unknown command: %c(%d)?\n", c, c);
