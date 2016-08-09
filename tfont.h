@@ -8,5 +8,6 @@ int tfont_getSize();
 
 void tfont_setPainter(tfont_put put, void *arg);
 
+int tfont_width(char const *code);
 
 int tfont_render(int x, int y, char const *code);

@@ -104,6 +104,23 @@ int scale(int v)
 int scalex(int x) { return scale(x); }
 int scaley(int y) { return scale(y - 2); }
 
+int tfont_width(char const *code)
+{
+	while(*code)
+	{
+		char c = sgetc(&code);
+		switch(c)
+		{
+			case 0:
+			case -1:
+				return 0;
+			case 'a':
+				return scalex(sgetn(&code));
+		}
+	}
+	return 0;
+}
+
 int tfont_render(int tx, int ty, char const *code)
 {
 	int advance = 0;
@@ -161,7 +178,7 @@ int tfont_render(int tx, int ty, char const *code)
 		px = x;
 		py = y;
 	}
-	return scale(advance);
+	return scalex(advance);
 }
 
 

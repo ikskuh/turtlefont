@@ -104,18 +104,23 @@ int main(int argc, const char **argv)
 	
 	load("test.tfn");
 	
-	char *testText = "prall vom whisky flog quax den jet zu bruch.";
+	char *testText = "prall vom whisky flog quax den\njet zu bruch.";
 	
-	int x = 4;
-	int y = 4 + tfont_getSize();
+	int x = 8;
+	int y = 8 + tfont_getSize();
 	
 	printf("%s\n", testText);
 	
 	while(*testText)
 	{
 		if(*testText == '\n') {
-			y += tfont_getSize();
+			x = 8;
+			y += tfont_getSize() + 8;
 		} else {
+			if(x + tfont_width(font[*testText].code) >= screen->w) {
+				x = 8;
+				y += tfont_getSize() + 8;
+			}	
 			x += tfont_render(x, y, font[*testText].code);
 		}
 		testText++;
