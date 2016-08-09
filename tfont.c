@@ -184,20 +184,6 @@ int tfont_render(int tx, int ty, char const *code)
 	return scalex(advance);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 static int max(int a, int b)
 {
 	if(a > b)
