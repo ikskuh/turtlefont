@@ -1,7 +1,6 @@
 #include "tfont.h"
 
 #include <stdbool.h>
-#include <stdlib.h>
 
 #if TFONT_DEBUG
 #include <stdio.h>
@@ -18,6 +17,14 @@ static struct tpainter painter;
 static int fontSize = 16;
 static int dotSize = 0;
 static float lineSpacing = 1.2;
+
+static int abs(int x)
+{
+	if(x < 0)
+		return -x;
+	else
+		return x;
+}
 
 static void put(int x, int y)
 {
