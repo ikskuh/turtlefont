@@ -95,7 +95,7 @@ int main(int argc, const char **argv)
 {
 	SDL_Init(SDL_INIT_EVERYTHING);
 
-	screen = SDL_SetVideoMode(800, 600, 32, SDL_SWSURFACE);
+	screen = SDL_SetVideoMode(800, 800, 32, SDL_SWSURFACE);
 
 	yellow = SDL_MapRGB(screen->format, 0xff, 0xff, 0x00);
 	
@@ -129,18 +129,18 @@ int main(int argc, const char **argv)
 	{
 		if(*string == '\n') {
 			x = 8;
-			y += tfont_getSize() + 8;
+			y += tfont_getLineHeight();
 		} else {
 			if(x + tfont_width(font[*string].code) >= screen->w) {
 				x = 8;
-				y += tfont_getSize() + 8;
+				y += tfont_getLineHeight();
 			}	
 			x += tfont_render(x, y, font[*string].code);
 		}
 		string++;
 	}
 	x = 8;
-	y += tfont_getSize() + 8;
+	y += tfont_getLineHeight();
 	
 	tfont_setSize(8);
 	tfont_setDotSize(1);
@@ -150,11 +150,11 @@ int main(int argc, const char **argv)
 	{
 		if(*string == '\n') {
 			x = 8;
-			y += tfont_getSize() + 8;
+			y += tfont_getLineHeight();
 		} else {
 			if(x + tfont_width(font[*string].code) >= screen->w) {
 				x = 8;
-				y += tfont_getSize() + 8;
+				y += tfont_getLineHeight();
 			}	
 			x += tfont_render(x, y, font[*string].code);
 		}

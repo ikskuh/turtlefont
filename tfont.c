@@ -17,6 +17,7 @@ static struct tpainter painter;
 
 static int fontSize = 16;
 static int dotSize = 0;
+static float lineSpacing = 1.2;
 
 static void put(int x, int y)
 {
@@ -205,3 +206,12 @@ void tfont_setPainter(tfont_put put, void *arg)
 void tfont_setDotSize(int size) { dotSize = max(size - 1, 0); }
 
 int tfont_getDotSize() { return dotSize; }
+
+void tfont_setLineSpacing(float spacing) { lineSpacing = spacing; }
+
+float tfont_getLineSpacing() { return lineSpacing; }
+
+int tfont_getLineHeight()
+{
+	return lineSpacing * (float)fontSize * 1.25;
+}
