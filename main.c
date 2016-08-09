@@ -95,36 +95,63 @@ int main(int argc, const char **argv)
 {
 	SDL_Init(SDL_INIT_EVERYTHING);
 
-	screen = SDL_SetVideoMode(640, 480, 32, SDL_SWSURFACE);
+	screen = SDL_SetVideoMode(800, 600, 32, SDL_SWSURFACE);
 
 	yellow = SDL_MapRGB(screen->format, 0xff, 0xff, 0x00);
 	
-	tfont_setSize(8);
-	tfont_setDotSize(0);
+	tfont_setSize(24);
+	tfont_setDotSize(2);
 	tfont_setPainter(&tfput, NULL);
 	
 	load("test.tfn");
 	
-	char *testText = "prall vom whisky flog quax den\njet zu bruch.";
+	char *testText = 
+		"prall vom whisky flog quax den\njet zu bruch.\n"
+		"PRALL VOM WHISKY FLOG QUAX DEN\nJET ZU BRUCH.\n"
+		"Prall vom Whisky flog Quax den\nJet zu Bruch.\n"
+		"(a) {a} [a]\n"
+	;
 	
 	int x = 8;
 	int y = 8 + tfont_getSize();
 	
 	printf("%s\n", testText);
 	
-	while(*testText)
+	char *string = testText;
+	while(*string)
 	{
-		if(*testText == '\n') {
+		if(*string == '\n') {
 			x = 8;
 			y += tfont_getSize() + 8;
 		} else {
-			if(x + tfont_width(font[*testText].code) >= screen->w) {
+			if(x + tfont_width(font[*string].code) >= screen->w) {
 				x = 8;
 				y += tfont_getSize() + 8;
 			}	
-			x += tfont_render(x, y, font[*testText].code);
+			x += tfont_render(x, y, font[*string].code);
 		}
-		testText++;
+		string++;
+	}
+	x = 8;
+	y += tfont_getSize() + 8;
+	
+	tfont_setSize(8);
+	tfont_setDotSize(1);
+	
+	string = testText;
+	while(*string)
+	{
+		if(*string == '\n') {
+			x = 8;
+			y += tfont_getSize() + 8;
+		} else {
+			if(x + tfont_width(font[*string].code) >= screen->w) {
+				x = 8;
+				y += tfont_getSize() + 8;
+			}	
+			x += tfont_render(x, y, font[*string].code);
+		}
+		string++;
 	}
 	
 	while(true)
