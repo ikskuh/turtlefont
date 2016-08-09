@@ -110,6 +110,7 @@ int main(int argc, const char **argv)
 		"PRALL VOM WHISKY FLOG QUAX DEN\nJET ZU BRUCH.\n"
 		"Prall vom Whisky flog Quax den\nJet zu Bruch.\n"
 		"(a) {a} [a]\n"
+		"0123456789\n"
 	;
 	
 	int x = 8;
