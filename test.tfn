@@ -56,3 +56,5 @@ Z:a6 M0A P4A P02 P42 M16 P36
 _:a6 M02 P42
 [:a4 M2A P0A P02 P22
 ]:a4 M0A P2A P22 P02
+(:a5 M3A p-1-1 p-1-2 p0-2 p1-2 p1-1
+):a5 M0A p1-1 p1-2 p0-2 p-1-2 p-1-1
