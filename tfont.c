@@ -203,7 +203,7 @@ void tfont_setPainter(tfont_put put, void *arg)
 	painter.arg = arg;
 }
 
-void tfont_setDotSize(int size) { dotSize = max(size - 1, 0); }
+void tfont_setDotSize(int size) { dotSize = max(0, size - 1); }
 
 int tfont_getDotSize() { return dotSize; }
 

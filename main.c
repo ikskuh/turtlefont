@@ -5,6 +5,9 @@
 #include <stdlib.h>
 #include <SDL/SDL.h>
 
+// Press plus/minus to change font size.
+// Any key refreshes the font file and code.
+
 // A: B m0,4 m1,1 m2,0 m1,-1 m0,-4 EM0,2Bm4,0
 
 SDL_Surface *screen;
@@ -49,8 +52,10 @@ void putpixel(SDL_Surface *surface, int x, int y, Uint32 pixel)
 
 void tfput(int x, int y, void *arg)
 {
+	if(x < 0 || y < 0 || x >= screen->w || y >= screen->h)
+		return;
 	putpixel(screen, x, y, yellow);
-	SDL_UpdateRect(screen, x, y, 1, 1);
+	// SDL_UpdateRect(screen, x, y, 1, 1);
 	
 	// Uncomment for epic
 	// SDL_Delay(4);
@@ -91,6 +96,43 @@ void load(const char *fileName)
 	fclose(f);
 }
 
+void render()
+{
+	load("test.tfn");
+	
+	FILE *f = fopen("main.c", "r");
+	
+	SDL_Rect rect = {
+		0, 0,
+		screen->w, screen->h
+	};
+	SDL_FillRect(screen, &rect, 0x00);
+	
+	int x = 8;
+	int y = 8 + tfont_getSize();
+	
+	while(!feof(f)) 
+	{
+		char buffer[256];
+		int len = fread(buffer, 1, 256, f);
+		
+		for(int i = 0; i < len; i++) {
+			char c = buffer[i];
+			if(c == '\n') {
+				x = 8;
+				y += tfont_getLineHeight();
+			} else {
+				if(x + tfont_width(font[c].code) >= screen->w) {
+					x = 8;
+					y += tfont_getLineHeight();
+				}	
+				x += tfont_render(x, y, font[c].code);
+			}
+		}
+	}
+	SDL_UpdateRect(screen, 0, 0, screen->w, screen->h);
+}
+
 int main(int argc, const char **argv)
 {
 	SDL_Init(SDL_INIT_EVERYTHING);
@@ -100,76 +142,40 @@ int main(int argc, const char **argv)
 	yellow = SDL_MapRGB(screen->format, 0xff, 0xff, 0x00);
 	
 	tfont_setSize(24);
-	tfont_setDotSize(2);
+	tfont_setDotSize(0);
 	tfont_setPainter(&tfput, NULL);
 	
-	load("test.tfn");
-	
-	for(int i = 33; i < 127; i++) {
-		printf("%c", i);
-	}
-	printf("\n");
-	
-	char *testText = 
-		"prall vom whisky flog quax den\njet zu bruch.\n"
-		"PRALL VOM WHISKY FLOG QUAX DEN\nJET ZU BRUCH.\n"
-		"Prall vom Whisky flog Quax den\nJet zu Bruch.\n"
-		"(a) {a} [a]\n"
-		"0123456789\n"
-		"!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
-	;
-	
-	int x = 8;
-	int y = 8 + tfont_getSize();
-	
-	printf("%s\n", testText);
-	
-	char *string = testText;
-	while(*string)
-	{
-		if(*string == '\n') {
-			x = 8;
-			y += tfont_getLineHeight();
-		} else {
-			if(x + tfont_width(font[*string].code) >= screen->w) {
-				x = 8;
-				y += tfont_getLineHeight();
-			}	
-			x += tfont_render(x, y, font[*string].code);
-		}
-		string++;
-	}
-	x = 8;
-	y += tfont_getLineHeight();
-	
-	tfont_setSize(8);
-	tfont_setDotSize(1);
-	
-	string = testText;
-	while(*string)
-	{
-		if(*string == '\n') {
-			x = 8;
-			y += tfont_getLineHeight();
-		} else {
-			if(x + tfont_width(font[*string].code) >= screen->w) {
-				x = 8;
-				y += tfont_getLineHeight();
-			}	
-			x += tfont_render(x, y, font[*string].code);
-		}
-		string++;
-	}
+	render();
 	
 	while(true)
 	{
-		char *line;
-		size_t len;
-		int c = getline(&line, &len, stdin);
-		if(c == EOF) break;
-		// render(line);
+		SDL_Event e;
+		while(SDL_PollEvent(&e))
+		{
+			if(e.type == SDL_QUIT) return 0;
+			if(e.type == SDL_KEYDOWN)
+			{
+				switch(e.key.keysym.sym)
+				{
+					case SDLK_PLUS:
+						tfont_setSize(tfont_getSize() + 2);
+						break;
+					case SDLK_MINUS:
+						tfont_setSize(tfont_getSize() - 2);
+						break;
+				}
+				if(tfont_getSize() < 16) {
+					tfont_setDotSize(1);
+				} else {
+					tfont_setDotSize(2);
+				}
+						
+				render();
+			}
+		}
+		
+		SDL_Delay(16);
 	}
-
 
 	return 0;
 }
