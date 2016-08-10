@@ -34,6 +34,18 @@ void tfont_setSize(int size);
 int tfont_getSize();
 
 /**
+ * Sets the stroke width.
+ * @param stroke The stroke width in pixels.
+ * @remarks The stroke is clamped to a minimum of 1 pixel.
+ */
+void tfont_setStroke(int stroke);
+
+/**
+ * Returns the currently set stroke.
+ */
+int tfont_getStroke();
+
+/**
  * Sets the render dot size.
  * @param size The radius of the dot in pixels.
  * @remarks    The dot size is clamped to a minimum of 1 pixel.

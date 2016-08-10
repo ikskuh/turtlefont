@@ -17,6 +17,7 @@ static struct tpainter painter;
 
 static int fontSize = 16;
 static int dotSize = 0;
+static int strokeSize = 1;
 static float lineSpacing = 1.2;
 
 static tfont_getglyph getGlyph = NULL;
@@ -31,8 +32,22 @@ static int abs(int x)
 
 static void put(int x, int y)
 {
-	if(painter.put) {
-		painter.put(x, y, painter.arg);
+	if(painter.put == NULL) {
+		return;
+	}
+	painter.put(x, y, painter.arg);
+}
+
+static void putStroke(int x, int y)
+{
+	// stroke idea proudly presented by: Kevin Wolf
+	if (painter.put == NULL) {
+		return;
+	}
+	for (int i = 0; i < strokeSize; i++) {
+		for (int j = 0; j < (strokeSize + 1) / 2; j++) {
+			painter.put(x + i, y + j, painter.arg);
+		}
 	}
 }
 
@@ -90,7 +105,7 @@ static void line(int x0, int y0, int x1, int y1)
   int err = dx+dy, e2; /* error value e_xy */
 
   while(1) {
-		put(x0, y0);
+		putStroke(x0, y0);
     if (x0==x1 && y0==y1) break;
     e2 = 2*err;
     if (e2 > dy) { err += dy; x0 += sx; } /* e_xy+e_x > 0 */
@@ -250,6 +265,10 @@ void tfont_setPainter(tfont_put put, void *arg)
 void tfont_setDotSize(int size) { dotSize = max(0, size - 1); }
 
 int tfont_getDotSize() { return dotSize; }
+
+void tfont_setStroke(int stroke) { strokeSize = max(1, stroke); }
+
+int tfont_getStroke() { return strokeSize; }
 
 void tfont_setLineSpacing(float spacing) { lineSpacing = spacing; }
 

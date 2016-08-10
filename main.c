@@ -161,6 +161,12 @@ int main(int argc, const char **argv)
 					case SDLK_MINUS:
 						tfont_setSize(tfont_getSize() - 2);
 						break;
+					case SDLK_t:
+						tfont_setStroke(tfont_getStroke() + 1);
+						break;
+					case SDLK_g:
+						tfont_setStroke(tfont_getStroke() - 1);
+						break;
 				}
 				if(tfont_getSize() < 16) {
 					tfont_setDotSize(1);
