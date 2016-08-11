@@ -143,6 +143,9 @@ int scaley(int y) { return scale(y - 2); }
 
 int tfont_width(char const *code)
 {
+	if(code == NULL) {
+		return 0;
+	}
 	while(*code)
 	{
 		char c = sgetc(&code);
@@ -160,6 +163,9 @@ int tfont_width(char const *code)
 
 int tfont_render_glyph(int tx, int ty, char const *code)
 {
+	if(code == NULL) {
+		return 0;
+	}
 	int advance = 0;
 	int x = 0;
 	int y = 0;
@@ -206,6 +212,7 @@ int tfont_render_glyph(int tx, int ty, char const *code)
 				dot(
 					tx + scalex(x),
 					ty - scaley(y));
+				break;
 			default:
 #if TFONT_DEBUG
 				printf("Unknown command: %c(%d)?\n", c, c);
@@ -218,6 +225,67 @@ int tfont_render_glyph(int tx, int ty, char const *code)
 	return scalex(advance);
 }
 
+/**
+ * Reads a character from the string given utf-8 string.
+ **/
+int tfont_get_codepoint(const char ** text)
+{
+#define next() (*(*text)++)
+#define ERROR '?'
+	int codepoint;
+	char c0 = next();
+	if(c0 & 0x80) {
+		// utf8 char
+		if(c0 & 0xC0 == 0x80) {
+			return ERROR; // this is not what we wanted to have...
+		}
+		if((c0 & 0xE0) == 0xC0) {
+			// two byte
+			char c1 = next();
+			if((c1 & 0xC0) != 0x80) {
+				return '?'; // parse error
+			}
+			codepoint = (c1 & 0x3F) | ((c0 & 0x1F) << 6);
+		}
+		else if((c0 & 0xF0) == 0xE0) {
+			// three byte
+			char c1 = next();
+			char c2 = next();
+			if((c1 & 0xC0) != 0x80) {
+				return ERROR; // parse error
+			}
+			if((c2 & 0xC0) != 0x80) {
+				return ERROR; // parse error
+			}
+			codepoint = (c2 & 0x3F) | (((c1 & 0x3F) | ((c0 & 0x0F) << 6)) << 6);
+		}
+		else if((c0 & 0xF8) == 0xF0) {
+			// four byte
+			char c1 = next();
+			char c2 = next();
+			char c3 = next();
+			if((c1 & 0xC0) != 0x80) {
+				return ERROR; // parse error
+			}
+			if((c2 & 0xC0) != 0x80) {
+				return ERROR; // parse error
+			}
+			if((c3 & 0xC0) != 0x80) {
+				return ERROR; // parse error
+			}
+			codepoint = (c3 & 0x3F) | (((c2 & 0x3F) | (((c1 & 0x3F) | ((c0 & 0x07) << 6)) << 6)) << 6);
+		}
+		else {
+			return ERROR; // parse error
+		}
+	} else {
+		codepoint = c0; // ASCII
+	}
+	return codepoint;
+#undef next
+#undef ERROR
+}
+
 int tfont_render_string(int sx, int sy, char const *text, int maxWidth, enum tfont_option flags)
 {
 	if(getGlyph == NULL) {
@@ -228,7 +296,7 @@ int tfont_render_string(int sx, int sy, char const *text, int maxWidth, enum tfo
 	
 	while(*text)
 	{
-		char c = *text++;
+		int c = tfont_get_codepoint(&text);
 		if(c == 0) {
 			break;
 		}
@@ -261,7 +329,7 @@ int tfont_measure_string(char const *text, int maxWidth, enum tfont_option flags
 	int w = 0;
 	while(*text)
 	{
-		char c = *text++;
+		int c = tfont_get_codepoint(&text);
 		if(c == 0) {
 			break;
 		}

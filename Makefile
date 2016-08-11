@@ -1,4 +1,4 @@
 all: demo
 
 demo: $(wildcard *.c) $(wildcard *.h)
-	gcc -lSDL -o $@ $(wildcard *.c)
+	gcc -g -O3 -lSDL -o $@ $(wildcard *.c)
