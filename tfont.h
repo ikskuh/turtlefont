@@ -114,3 +114,12 @@ int tfont_render_glyph(int x, int y, char const *code);
  * @param flags    Modifies the string rendering behaviour
  */
 int tfont_render_string(int x, int y, char const *text, int maxWidth, enum tfont_option flags);
+
+
+/**
+ * Measures the width of a string.
+ * @param text     The string to render
+ * @param maxWidth The maximum width of the string. If this is less or equal to zero, no wrapping will happen.
+ * @param flags    Modifies the string rendering behaviour
+ */
+int tfont_measure_string(char const *text, int maxWidth, enum tfont_option flags);

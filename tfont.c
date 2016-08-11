@@ -7,6 +7,14 @@
 #include <stdio.h>
 #endif 
 
+static int max(int a, int b)
+{
+	if(a > b)
+		return a;
+	else
+		return b;
+}
+
 struct tpainter 
 {
 	tfont_put put;
@@ -231,7 +239,7 @@ int tfont_render_string(int sx, int sy, char const *text, int maxWidth, enum tfo
 			const char *glyph = getGlyph(c);
 			if(glyph != NULL) {
 				if(maxWidth > 0) {
-					if(x + tfont_width(glyph) >= maxWidth ) {
+					if(x + tfont_width(glyph) >= (sx + maxWidth)) {
 						x = sx;
 						y += tfont_getLineHeight();
 					}	
@@ -244,12 +252,37 @@ int tfont_render_string(int sx, int sy, char const *text, int maxWidth, enum tfo
 	return y - sy + tfont_getLineHeight();
 }
 
-static int max(int a, int b)
+int tfont_measure_string(char const *text, int maxWidth, enum tfont_option flags)
 {
-	if(a > b)
-		return a;
-	else
-		return b;
+	if(getGlyph == NULL) {
+		return 0;
+	}
+	int width = 0;
+	int w = 0;
+	while(*text)
+	{
+		char c = *text++;
+		if(c == 0) {
+			break;
+		}
+		if(c == '\n') {
+			width = max(width, w);
+			w = 0;
+		} else {
+			const char *glyph = getGlyph(c);
+			if(glyph != NULL) {
+				if(maxWidth > 0) {
+					if(tfont_width(glyph) >= maxWidth) {						
+						width = max(width, w);
+						w = 0;
+					}	
+				}
+				w += tfont_width(glyph);
+			}
+		}
+		
+	}
+	return max(width, w);
 }
 
 void tfont_setSize(int size) { fontSize = max(8, size); }
