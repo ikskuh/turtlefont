@@ -1,3 +1,6 @@
+// ABCDEFGHIJKLMNOPQRSTUVWXYZ
+// X MARKS THE SPOT
+
 #include "tfont.h"
 
 #include <stdio.h>
@@ -130,7 +133,7 @@ void load(const char *fileName)
 
 void render()
 {
-	load("test.tfn");
+	load("pigpen.tfn");
 	
 	FILE *f = fopen("tfont.c", "r");
 	
@@ -145,9 +148,14 @@ void render()
 	
 	tfont_render_string(
 		x, y,
-		"Quäker würgen Meißen völlig übertrieben.\n"
-		"f(x) = 10 × a ÷ 3\n"
-		"↑ ↓ → ← '...' → '…'",
+		"Hallo Mara ich kann kodieren\n"
+		"ABCDEFGHIJKLMNOPQRSTUVWXYZ\n"
+		"X MARKS THE SPOT\n"
+		"\n"
+		"\n",
+		// "Quäker würgen Meißen völlig übertrieben.\n"
+		// "f(x) = 10 × a ÷ 3\n"
+		// "↑ ↓ → ← '...' → '…'",
 		0,
 		tfNone);
 	
@@ -179,7 +187,7 @@ int main(int argc, const char **argv)
 {
 	SDL_Init(SDL_INIT_EVERYTHING);
 
-	screen = SDL_SetVideoMode(800, 800, 32, SDL_SWSURFACE);
+	screen = SDL_SetVideoMode(1000, 800, 32, SDL_SWSURFACE);
 
 	yellow = SDL_MapRGB(screen->format, 0xff, 0xff, 0x00);
 	
