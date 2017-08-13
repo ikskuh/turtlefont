@@ -133,7 +133,7 @@ void load(const char *fileName)
 
 void render()
 {
-	load("pigpen.tfn");
+	load("test.tfn");
 	
 	FILE *f = fopen("tfont.c", "r");
 	
@@ -148,14 +148,9 @@ void render()
 	
 	tfont_render_string(
 		x, y,
-		"Hallo Mara ich kann kodieren\n"
-		"ABCDEFGHIJKLMNOPQRSTUVWXYZ\n"
-		"X MARKS THE SPOT\n"
-		"\n"
-		"\n",
-		// "Quäker würgen Meißen völlig übertrieben.\n"
-		// "f(x) = 10 × a ÷ 3\n"
-		// "↑ ↓ → ← '...' → '…'",
+		"Quäker würgen Meißen völlig übertrieben.\n"
+		"f(x) = 10 × a ÷ 3\n"
+		"↑ ↓ → ← '...' → '…'",
 		0,
 		tfNone);
 	
