@@ -41,3 +41,8 @@ To build the demo, install SDL 1, then type:
 The demo is then runnable with
 
 	./a.out
+
+## Example
+This image will emerge when compiling the demo. It shows the capability of decoding and rendering UTF-8:
+
+![Font Demo](https://puu.sh/uM2ip/a4650910e8.png)
