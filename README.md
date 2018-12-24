@@ -45,4 +45,4 @@ The demo is then runnable with
 ## Example
 This image will emerge when compiling the demo. It shows the capability of decoding and rendering UTF-8:
 
-![Font Demo](https://puu.sh/uM2ip/a4650910e8.png)
+![Font Demo](https://puu.sh/CmA4v/64f22055b8.png)
