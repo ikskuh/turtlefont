@@ -13,6 +13,20 @@ pub fn main() !u8 {
     var cli = args.parseForCurrentProcess(CliOptions, allocator, .print) catch return 1;
     defer cli.deinit();
 
+    const display_text: []const u8 = blk: {
+        if (cli.options.text != null and cli.options.file != null) {
+            @panic("Cannot both specify --file and --text");
+        }
+
+        break :blk if (cli.options.text) |text|
+            try allocator.dupe(u8, text)
+        else if (cli.options.file) |file_name|
+            try std.fs.cwd().readFileAlloc(allocator, file_name, 1 << 20)
+        else
+            try allocator.dupe(u8, "Use --file <path> or --text <string> to change this text.");
+    };
+    defer allocator.free(display_text);
+
     const font: turtlefont.Font = blk: {
         var font_file = try std.fs.cwd().openFile(cli.options.font orelse @panic("missing font file parameters"), .{});
         defer font_file.close();
@@ -43,7 +57,7 @@ pub fn main() !u8 {
     };
     defer head.close();
 
-    const fb = try head.requestFramebuffer(.rgbx8888, 400, 300, 200 * std.time.ns_per_ms);
+    const fb = try head.requestFramebuffer(.rgbx8888, 800, 600, 200 * std.time.ns_per_ms);
 
     const rast = Rasterizer.init(fb);
     var cfg = turtlefont.RasterOptions{};
@@ -70,7 +84,7 @@ pub fn main() !u8 {
         rast.render(
             10,
             10 + cfg.lineHeight(),
-            "Hello, World!",
+            display_text,
             font,
             .{ .r = 0xFF, .g = 0x00, .b = 0x00 },
             cfg,
@@ -87,6 +101,9 @@ const CliOptions = struct {
 
     font: ?[]const u8 = null,
     output: ?[]const u8 = null,
+
+    text: ?[]const u8 = null,
+    file: ?[]const u8 = null,
 };
 
 const Color = ProxyHead.ColorFormat.RGBX8888;
