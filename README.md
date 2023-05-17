@@ -11,7 +11,7 @@ Turtlefont is a small vector graphics font file format with an example font. It 
 This project also provides some font specimen examples:
 
 - ![font example](fonts/default.png) [Turtle](fonts/default.tfn)
-- ![font example](fonts/pigpen.png) [Pigpen](fonts/pigpen.tfn) [more info can be found here](https://en.wikipedia.org/wiki/Pigpen_cipher)
+- ![font example](fonts/pigpen.png) [Pigpen](fonts/pigpen.tfn) (more info can be found [here](https://en.wikipedia.org/wiki/Pigpen_cipher))
 
 ## Binary Format
 
