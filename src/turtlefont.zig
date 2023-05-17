@@ -86,22 +86,43 @@ pub const Font = struct {
             }
 
             if (cap.codepoint < codepoint) {
-                base += count / 2;
-                count -= count / 2;
+                base += (count + 1) / 2;
+                count = count / 2;
             } else {
                 count /= 2;
             }
         } else return null;
     }
+
+    fn getCode(font: Font, glyph: Glyph) [*]const u8 {
+        const total_count = std.mem.readIntLittle(u32, font.data[4..8]);
+        const limit_by_count = 8 + 8 * total_count;
+
+        return font.data.ptr + limit_by_count + glyph.offset;
+    }
 };
 
 const CommandId = enum(u4) {
-    move_rel = 0,
-    move_abs = 1,
-    line_rel = 2,
-    line_abs = 3,
-    point = 4,
+    end = 0,
+    move_rel = 1,
+    move_abs = 2,
+    line_rel = 3,
+    line_abs = 4,
+    point = 5,
+
+    pub fn coordinateType(cmd: CommandId) CoordinateType {
+        return switch (cmd) {
+            .end => .none,
+            .move_rel => .relative,
+            .move_abs => .absolute,
+            .line_rel => .relative,
+            .line_abs => .absolute,
+            .point => .none,
+        };
+    }
 };
+
+const CoordinateType = enum { none, relative, absolute };
 
 const EncodedCommand = packed struct(u8) {
     cmd: CommandId,
@@ -155,7 +176,7 @@ pub const FontCompiler = struct {
                     .advance => |val| advance.* = val,
                 }
             }
-
+            try writer.writeByte(@bitCast(u8, EncodedCommand{ .cmd = .end }));
             try buffered_writer.flush();
         }
 
@@ -309,30 +330,188 @@ pub const FontCompiler = struct {
     }
 };
 
+pub const RasterOptions = struct {
+    font_size: u15 = 16,
+    dot_size: u15 = 0,
+    stroke_size: u15 = 1,
+    line_spacing: u32 = 1200, // 1.2
+
+    pub fn lineHeight(options: RasterOptions) u15 {
+        return @intCast(u15, 125 * options.font_size * options.line_spacing / 100_000);
+    }
+
+    fn scale(options: RasterOptions, v: i16) i16 {
+        return @divTrunc((options.font_size * v + 4), 8); // 8 is encoded font height
+    }
+
+    fn scaleX(options: RasterOptions, x: i16) i16 {
+        return options.scale(x);
+    }
+    fn scaleY(options: RasterOptions, y: i16) i16 {
+        return options.scale(y - 2); // 2 is descender
+    }
+};
+
 pub fn Rasterizer(
     comptime Context: type,
     comptime Color: type,
     comptime setPixel: fn (Context, x: i16, y: i16, Color) void,
 ) type {
     return struct {
+        const Rast = @This();
+        const Point = struct {
+            x: i16,
+            y: i16,
+        };
+        const Options = RasterOptions;
+
         context: Context,
 
-        pub fn render(raster: Rasterizer, x: i16, y: i16, string: []const u8, font: Font, color: Color) void {
-            _ = x;
-            _ = y;
-            _ = raster;
-            _ = string;
-            _ = font;
-            _ = color;
-            _ = setPixel;
+        pub fn init(ctx: Context) Rast {
+            return .{ .context = ctx };
+        }
+
+        fn put(raster: Rast, x: i16, y: i16, c: Color) void {
+            setPixel(raster.context, x, y, c);
+        }
+
+        fn putStroke(raster: Rast, options: Options, x: i16, y: i16, c: Color) void {
+            for (0..options.stroke_size) |i| {
+                for (0..(options.stroke_size + 1) / 2) |j| {
+                    raster.put(x + @intCast(u15, i), y + @intCast(u15, j), c);
+                }
+            }
+        }
+
+        pub fn render(raster: Rast, x: i16, y: i16, string: []const u8, font: Font, color: Color, options: Options) void {
+            var view = std.unicode.Utf8View.initUnchecked(string);
+            var iter = view.iterator();
+
+            const replacement_glyph = font.findGlyph('�') orelse font.findGlyph('?');
+
+            const line_height = options.lineHeight();
+
+            var px = x;
+            var py = y;
+            while (iter.nextCodepoint()) |codepoint| {
+                if (codepoint == '\n') {
+                    px = x;
+                    py += line_height;
+                    continue;
+                }
+
+                const glyph: Font.Glyph = font.findGlyph(codepoint) orelse replacement_glyph orelse continue;
+
+                raster.renderGlyph(options, px, py, color, font.getCode(glyph));
+
+                px += options.scaleX(glyph.advance);
+            }
+        }
+
+        fn renderGlyph(raster: Rast, options: Options, tx: i16, ty: i16, color: Color, glyph_code: [*]const u8) void {
+            var prev = Point{ .x = 0, .y = 0 };
+            var pos = Point{ .x = 0, .y = 0 };
+
+            var reader = Reader{ .ptr = glyph_code };
+            while (reader.fetchCommand()) |cmd| {
+                switch (cmd.coordinateType()) {
+                    .none => {},
+                    .relative => {
+                        const delta = reader.fetchPoint();
+                        pos.x +|= delta.x;
+                        pos.y +|= delta.y;
+                    },
+                    .absolute => pos = reader.fetchPoint(),
+                }
+
+                switch (cmd) {
+                    .end => unreachable,
+
+                    .move_rel, .move_abs => {},
+
+                    .line_rel, .line_abs => raster.line(
+                        options,
+                        tx + options.scaleX(prev.x),
+                        ty - options.scaleX(prev.y),
+                        tx + options.scaleX(pos.x),
+                        ty - options.scaleX(pos.y),
+                        color,
+                    ),
+
+                    .point => raster.dot(
+                        options,
+                        tx + options.scaleX(pos.x),
+                        ty - options.scaleX(pos.y),
+                        color,
+                    ),
+                }
+                prev = pos;
+            }
+        }
+
+        const Reader = struct {
+            ptr: [*]const u8,
+
+            fn fetchCommand(reader: *Reader) ?CommandId {
+                const ec = @bitCast(EncodedCommand, reader.ptr[0]);
+                reader.ptr += 1;
+                if (ec.cmd == .end)
+                    return null;
+                return ec.cmd;
+            }
+            fn fetchPoint(reader: *Reader) Point {
+                const x = @bitCast(i8, reader.ptr[0]);
+                const y = @bitCast(i8, reader.ptr[1]);
+                reader.ptr += 2;
+                return Point{ .x = x, .y = y };
+            }
+        };
+
+        fn line(raster: Rast, options: Options, x0: i16, y0: i16, x1: i16, y1: i16, color: Color) void {
+            const dx = @intCast(i16, if (x1 > x0) x1 - x0 else x0 - x1);
+            const dy = -@intCast(i16, if (y1 > y0) y1 - y0 else y0 - y1);
+
+            const sx = if (x0 < x1) @as(i16, 1) else @as(i16, -1);
+            const sy = if (y0 < y1) @as(i16, 1) else @as(i16, -1);
+
+            var err = dx + dy;
+
+            var x = x0;
+            var y = y0;
+
+            while (true) {
+                raster.putStroke(options, x, y, color);
+
+                if (x == x1 and y == y1) {
+                    break;
+                }
+
+                const e2 = 2 * err;
+                if (e2 > dy) { // e_xy+e_x > 0
+                    err += dy;
+                    x += sx;
+                }
+                if (e2 < dx) { // e_xy+e_y < 0
+                    err += dx;
+                    y += sy;
+                }
+            }
+        }
+
+        fn dot(raster: Rast, options: Options, x: i16, y: i16, color: Color) void {
+            const size2 = options.dot_size * options.dot_size;
+            var dy: i16 = -@as(i16, options.dot_size);
+            while (dy <= options.dot_size) : (dy += 1) {
+                var dx: i16 = -@as(i16, options.dot_size);
+                while (dx <= options.dot_size) : (dx += 1) {
+                    if (dx * dx + dy * dy <= size2) {
+                        raster.put(x + dx, y + dy, color);
+                    }
+                }
+            }
         }
     };
 }
-
-const Coordinate = packed struct {
-    x: u4,
-    y: u4,
-};
 
 const CodepointAdvancePair = packed struct(u32) {
     codepoint: u24,
