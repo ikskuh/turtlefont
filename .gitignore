@@ -33,3 +33,5 @@
 *.su
 a.out
 demo
+zig-cache/
+zig-out/
