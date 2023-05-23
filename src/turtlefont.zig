@@ -58,7 +58,7 @@ pub const Font = struct {
         };
     }
 
-    const Glyph = extern struct {
+    pub const Glyph = extern struct {
         codepoint: u32,
         advance: u8,
         offset: u32,
@@ -94,7 +94,7 @@ pub const Font = struct {
         } else return null;
     }
 
-    fn getCode(font: Font, glyph: Glyph) [*]const u8 {
+    pub fn getCode(font: Font, glyph: Glyph) [*]const u8 {
         const total_count = std.mem.readIntLittle(u32, font.data[4..8]);
         const limit_by_count = 8 + 8 * total_count;
 
@@ -340,14 +340,15 @@ pub const RasterOptions = struct {
         return @intCast(u15, 125 * options.font_size * options.line_spacing / 100_000);
     }
 
-    fn scale(options: RasterOptions, v: i16) i16 {
+    pub fn scale(options: RasterOptions, v: i16) i16 {
         return @divTrunc((options.font_size * v + 4), 8); // 8 is encoded font height
     }
 
-    fn scaleX(options: RasterOptions, x: i16) i16 {
+    pub fn scaleX(options: RasterOptions, x: i16) i16 {
         return options.scale(x);
     }
-    fn scaleY(options: RasterOptions, y: i16) i16 {
+
+    pub fn scaleY(options: RasterOptions, y: i16) i16 {
         return options.scale(y - 2); // 2 is descender
     }
 };
@@ -408,7 +409,7 @@ pub fn Rasterizer(
             }
         }
 
-        fn renderGlyph(raster: Rast, options: Options, tx: i16, ty: i16, color: Color, glyph_code: [*]const u8) void {
+        pub fn renderGlyph(raster: Rast, options: Options, tx: i16, ty: i16, color: Color, glyph_code: [*]const u8) void {
             var prev = Point{ .x = 0, .y = 0 };
             var pos = Point{ .x = 0, .y = 0 };
 
@@ -432,16 +433,16 @@ pub fn Rasterizer(
                     .line_rel, .line_abs => raster.line(
                         options,
                         tx + options.scaleX(prev.x),
-                        ty - options.scaleX(prev.y),
+                        ty - options.scaleY(prev.y),
                         tx + options.scaleX(pos.x),
-                        ty - options.scaleX(pos.y),
+                        ty - options.scaleY(pos.y),
                         color,
                     ),
 
                     .point => raster.dot(
                         options,
                         tx + options.scaleX(pos.x),
-                        ty - options.scaleX(pos.y),
+                        ty - options.scaleY(pos.y),
                         color,
                     ),
                 }
