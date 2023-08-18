@@ -36,7 +36,7 @@ pub const Font = struct {
 
         for (0..count) |glyph_index| {
             const base = 8 + 8 * glyph_index;
-            const cap = @bitCast(CodepointAdvancePair, std.mem.readIntLittle(u32, buffer[base..][0..4]));
+            const cap = @as(CodepointAdvancePair, @bitCast(std.mem.readIntLittle(u32, buffer[base..][0..4])));
             const offset = std.mem.readIntLittle(u32, buffer[base..][4..8]);
             if (cap.codepoint > std.math.maxInt(u21))
                 return error.InvalidFont;
@@ -74,7 +74,7 @@ pub const Font = struct {
             const total_offset = 8 + 8 * (base + count / 2);
             const offset_advance_pair = std.mem.readIntLittle(u32, font.data[total_offset..][0..4]);
 
-            const cap = @bitCast(CodepointAdvancePair, offset_advance_pair);
+            const cap = @as(CodepointAdvancePair, @bitCast(offset_advance_pair));
 
             if (cap.codepoint == codepoint) {
                 const offset = std.mem.readIntLittle(u32, font.data[total_offset..][4..8]);
@@ -157,26 +157,26 @@ pub const FontCompiler = struct {
             while (try decoder.fetchCommand()) |cmd| {
                 switch (cmd) {
                     .move_rel => |val| {
-                        try writer.writeByte(@bitCast(u8, EncodedCommand{ .cmd = .move_rel }));
+                        try writer.writeByte(@as(u8, @bitCast(EncodedCommand{ .cmd = .move_rel })));
                         try writePoint(writer, val);
                     },
                     .move_abs => |val| {
-                        try writer.writeByte(@bitCast(u8, EncodedCommand{ .cmd = .move_abs }));
+                        try writer.writeByte(@as(u8, @bitCast(EncodedCommand{ .cmd = .move_abs })));
                         try writePoint(writer, val);
                     },
                     .line_rel => |val| {
-                        try writer.writeByte(@bitCast(u8, EncodedCommand{ .cmd = .line_rel }));
+                        try writer.writeByte(@as(u8, @bitCast(EncodedCommand{ .cmd = .line_rel })));
                         try writePoint(writer, val);
                     },
                     .line_abs => |val| {
-                        try writer.writeByte(@bitCast(u8, EncodedCommand{ .cmd = .line_abs }));
+                        try writer.writeByte(@as(u8, @bitCast(EncodedCommand{ .cmd = .line_abs })));
                         try writePoint(writer, val);
                     },
-                    .point => try writer.writeByte(@bitCast(u8, EncodedCommand{ .cmd = .point })),
+                    .point => try writer.writeByte(@as(u8, @bitCast(EncodedCommand{ .cmd = .point }))),
                     .advance => |val| advance.* = val,
                 }
             }
-            try writer.writeByte(@bitCast(u8, EncodedCommand{ .cmd = .end }));
+            try writer.writeByte(@as(u8, @bitCast(EncodedCommand{ .cmd = .end })));
             try buffered_writer.flush();
         }
 
@@ -302,24 +302,24 @@ pub const FontCompiler = struct {
             try list.append(glyph_buffer);
         }
 
-        std.sort.sort(GlyphBuffer, list.items, {}, orderGlyphBuffer);
+        std.sort.block(GlyphBuffer, list.items, {}, orderGlyphBuffer);
 
         var buffered_writer = std.io.bufferedWriter(dst_stream);
         const writer = buffered_writer.writer();
 
         try writer.writeIntLittle(u32, 0x4c2b8688);
-        try writer.writeIntLittle(u32, @intCast(u32, list.items.len));
+        try writer.writeIntLittle(u32, @as(u32, @intCast(list.items.len)));
 
         var run_offset: u32 = 0;
 
         for (list.items) |glyph| {
-            try writer.writeIntLittle(u32, @bitCast(u32, CodepointAdvancePair{
+            try writer.writeIntLittle(u32, @as(u32, @bitCast(CodepointAdvancePair{
                 .codepoint = glyph.codepoint,
                 .advance = glyph.advance,
-            }));
+            })));
             try writer.writeIntLittle(u32, run_offset);
 
-            run_offset += @intCast(u32, glyph.code.len);
+            run_offset += @as(u32, @intCast(glyph.code.len));
         }
 
         for (list.items) |glyph| {
@@ -337,7 +337,7 @@ pub const RasterOptions = struct {
     line_spacing: u32 = 1200, // 1.2
 
     pub fn lineHeight(options: RasterOptions) u15 {
-        return @intCast(u15, 125 * options.font_size * options.line_spacing / 100_000);
+        return @as(u15, @intCast(125 * options.font_size * options.line_spacing / 100_000));
     }
 
     pub fn scale(options: RasterOptions, v: i16) i16 {
@@ -379,7 +379,7 @@ pub fn Rasterizer(
         fn putStroke(raster: Rast, options: Options, x: i16, y: i16, c: Color) void {
             for (0..options.stroke_size) |i| {
                 for (0..(options.stroke_size + 1) / 2) |j| {
-                    raster.put(x + @intCast(u15, i), y + @intCast(u15, j), c);
+                    raster.put(x + @as(u15, @intCast(i)), y + @as(u15, @intCast(j)), c);
                 }
             }
         }
@@ -454,23 +454,23 @@ pub fn Rasterizer(
             ptr: [*]const u8,
 
             fn fetchCommand(reader: *Reader) ?CommandId {
-                const ec = @bitCast(EncodedCommand, reader.ptr[0]);
+                const ec = @as(EncodedCommand, @bitCast(reader.ptr[0]));
                 reader.ptr += 1;
                 if (ec.cmd == .end)
                     return null;
                 return ec.cmd;
             }
             fn fetchPoint(reader: *Reader) Point {
-                const x = @bitCast(i8, reader.ptr[0]);
-                const y = @bitCast(i8, reader.ptr[1]);
+                const x = @as(i8, @bitCast(reader.ptr[0]));
+                const y = @as(i8, @bitCast(reader.ptr[1]));
                 reader.ptr += 2;
                 return Point{ .x = x, .y = y };
             }
         };
 
         fn line(raster: Rast, options: Options, x0: i16, y0: i16, x1: i16, y1: i16, color: Color) void {
-            const dx = @intCast(i16, if (x1 > x0) x1 - x0 else x0 - x1);
-            const dy = -@intCast(i16, if (y1 > y0) y1 - y0 else y0 - y1);
+            const dx = @as(i16, @intCast(if (x1 > x0) x1 - x0 else x0 - x1));
+            const dy = -@as(i16, @intCast(if (y1 > y0) y1 - y0 else y0 - y1));
 
             const sx = if (x0 < x1) @as(i16, 1) else @as(i16, -1);
             const sy = if (y0 < y1) @as(i16, 1) else @as(i16, -1);
