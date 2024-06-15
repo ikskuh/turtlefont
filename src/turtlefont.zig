@@ -25,8 +25,8 @@ pub const Font = struct {
     pub fn load(buffer: []const u8) error{InvalidFont}!Font {
         if (buffer.len < 8)
             return error.InvalidFont;
-        const magic = std.mem.readIntLittle(u32, buffer[0..4]);
-        const count = std.mem.readIntLittle(u32, buffer[4..8]);
+        const magic = std.mem.readInt(u32, buffer[0..4], .little);
+        const count = std.mem.readInt(u32, buffer[4..8], .little);
         if (magic != 0x4c2b8688)
             return error.InvalidFont;
 
@@ -36,8 +36,8 @@ pub const Font = struct {
 
         for (0..count) |glyph_index| {
             const base = 8 + 8 * glyph_index;
-            const cap = @as(CodepointAdvancePair, @bitCast(std.mem.readIntLittle(u32, buffer[base..][0..4])));
-            const offset = std.mem.readIntLittle(u32, buffer[base..][4..8]);
+            const cap = @as(CodepointAdvancePair, @bitCast(std.mem.readInt(u32, buffer[base..][0..4], .little)));
+            const offset = std.mem.readInt(u32, buffer[base..][4..8], .little);
             if (cap.codepoint > std.math.maxInt(u21))
                 return error.InvalidFont;
             if (limit_by_count + offset >= buffer.len)
@@ -65,19 +65,19 @@ pub const Font = struct {
     };
 
     pub fn findGlyph(font: Font, codepoint: u21) ?Glyph {
-        const total_count = std.mem.readIntLittle(u32, font.data[4..8]);
+        const total_count = std.mem.readInt(u32, font.data[4..8], .little);
 
         var base: usize = 0;
         var count: usize = total_count;
 
         while (count > 0) {
             const total_offset = 8 + 8 * (base + count / 2);
-            const offset_advance_pair = std.mem.readIntLittle(u32, font.data[total_offset..][0..4]);
+            const offset_advance_pair = std.mem.readInt(u32, font.data[total_offset..][0..4], .little);
 
             const cap = @as(CodepointAdvancePair, @bitCast(offset_advance_pair));
 
             if (cap.codepoint == codepoint) {
-                const offset = std.mem.readIntLittle(u32, font.data[total_offset..][4..8]);
+                const offset = std.mem.readInt(u32, font.data[total_offset..][4..8], .little);
                 return Glyph{
                     .codepoint = cap.codepoint,
                     .offset = offset,
@@ -95,7 +95,7 @@ pub const Font = struct {
     }
 
     pub fn getCode(font: Font, glyph: Glyph) [*]const u8 {
-        const total_count = std.mem.readIntLittle(u32, font.data[4..8]);
+        const total_count = std.mem.readInt(u32, font.data[4..8], .little);
         const limit_by_count = 8 + 8 * total_count;
 
         return font.data.ptr + limit_by_count + glyph.offset;
@@ -181,8 +181,8 @@ pub const FontCompiler = struct {
         }
 
         fn writePoint(writer: anytype, pt: Point) !void {
-            try writer.writeIntLittle(i8, pt.x);
-            try writer.writeIntLittle(i8, pt.y);
+            try writer.writeInt(i8, pt.x, .little);
+            try writer.writeInt(i8, pt.y, .little);
         }
 
         fn fetchCommand(decoder: *Decoder) !?Command {
@@ -273,7 +273,7 @@ pub const FontCompiler = struct {
 
             var iterator = utf8_view.iterator();
 
-            var codepoint = iterator.nextCodepoint() orelse return error.InvalidFormat;
+            const codepoint = iterator.nextCodepoint() orelse return error.InvalidFormat;
 
             if (iterator.nextCodepoint() != @as(?u21, ':'))
                 return error.InvalidFormat;
@@ -307,17 +307,17 @@ pub const FontCompiler = struct {
         var buffered_writer = std.io.bufferedWriter(dst_stream);
         const writer = buffered_writer.writer();
 
-        try writer.writeIntLittle(u32, 0x4c2b8688);
-        try writer.writeIntLittle(u32, @as(u32, @intCast(list.items.len)));
+        try writer.writeInt(u32, 0x4c2b8688, .little);
+        try writer.writeInt(u32, @as(u32, @intCast(list.items.len)), .little);
 
         var run_offset: u32 = 0;
 
         for (list.items) |glyph| {
-            try writer.writeIntLittle(u32, @as(u32, @bitCast(CodepointAdvancePair{
+            try writer.writeInt(u32, @as(u32, @bitCast(CodepointAdvancePair{
                 .codepoint = glyph.codepoint,
                 .advance = glyph.advance,
-            })));
-            try writer.writeIntLittle(u32, run_offset);
+            })), .little);
+            try writer.writeInt(u32, run_offset, .little);
 
             run_offset += @as(u32, @intCast(glyph.code.len));
         }

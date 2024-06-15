@@ -236,7 +236,7 @@ int tfont_get_codepoint(const char ** text)
 	char c0 = next();
 	if(c0 & 0x80) {
 		// utf8 char
-		if(c0 & 0xC0 == 0x80) {
+		if((c0 & 0xC0) == 0x80) {
 			return ERROR; // this is not what we wanted to have...
 		}
 		if((c0 & 0xE0) == 0xC0) {
