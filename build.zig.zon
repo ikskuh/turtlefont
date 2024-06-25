@@ -4,8 +4,8 @@
 
     .dependencies = .{
         .proxy_head = .{
-            .url = "https://github.com/ikskuh/proxy-head/archive/0ac43be9cd3000f4ab4b00145218b750f87be527.tar.gz",
-            .hash = "1220302a744c1b3632a8c408b05dadd55ccd9ae94e2b75273d3150f278e49beab566",
+            .url = "https://github.com/ikskuh/proxy-head/archive/0fbbb678af3bcded19c628651cce1a854b2d7316.tar.gz",
+            .hash = "122090e74c4850338febbf0e89ca683584ec084fadd971cc384f4cf0578577c76fc9",
         },
         .args = .{
             .url = "https://github.com/ikskuh/zig-args/archive/872272205d95bdba33798c94e72c5387a31bc806.tar.gz",
