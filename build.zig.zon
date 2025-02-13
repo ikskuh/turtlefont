@@ -2,16 +2,12 @@
     .name = "turtlefont",
     .version = "0.1.0",
 
-    .dependencies = .{
-        .proxy_head = .{
-            .url = "https://github.com/ikskuh/proxy-head/archive/0fbbb678af3bcded19c628651cce1a854b2d7316.tar.gz",
-            .hash = "122090e74c4850338febbf0e89ca683584ec084fadd971cc384f4cf0578577c76fc9",
-        },
-        .args = .{
-            .url = "https://github.com/ikskuh/zig-args/archive/872272205d95bdba33798c94e72c5387a31bc806.tar.gz",
-            .hash = "1220fe6ae56b668cc4a033282b5f227bfbb46a67ede6d84e9f9493fea9de339b5f37",
-        },
-    },
+    .dependencies = .{},
 
-    .paths = .{""},
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+        "fonts",
+    },
 }
