@@ -144,11 +144,98 @@ pub const FontCompiler = struct {
         advance: u8,
     };
 
-    const Decoder = struct {
+    fn orderGlyphBuffer(_: void, a: GlyphBuffer, b: GlyphBuffer) bool {
+        return a.codepoint < b.codepoint;
+    }
+
+    pub fn compile(allocator: std.mem.Allocator, src_stream: anytype, dst_stream: anytype) !void {
+        var buffered_reader = std.io.bufferedReader(src_stream);
+
+        const reader = buffered_reader.reader();
+
+        var temp_storage = std.heap.ArenaAllocator.init(allocator);
+        defer temp_storage.deinit();
+
+        var list = std.ArrayList(GlyphBuffer).init(temp_storage.allocator());
+        defer list.deinit();
+
+        var line_buffer: [1024]u8 = undefined;
+        while (try reader.readUntilDelimiterOrEof(&line_buffer, '\n')) |raw_line| {
+            const line = std.mem.trim(u8, raw_line, "\r\n");
+            if (line.len == 0)
+                continue;
+
+            var utf8_view = try std.unicode.Utf8View.init(line);
+
+            var iterator = utf8_view.iterator();
+
+            const codepoint = iterator.nextCodepoint() orelse return error.InvalidFormat;
+
+            if (iterator.nextCodepoint() != @as(?u21, ':'))
+                return error.InvalidFormat;
+
+            var stream_buffer = std.ArrayList(u8).init(temp_storage.allocator());
+            defer stream_buffer.deinit();
+
+            var glyph_buffer = GlyphBuffer{
+                .codepoint = codepoint,
+                .code = undefined,
+                .offset = undefined,
+                .advance = undefined,
+            };
+
+            const meta = try compileGlyphScript(line[iterator.i..], stream_buffer.writer());
+            glyph_buffer.advance = meta.advance;
+            glyph_buffer.code = try stream_buffer.toOwnedSlice();
+
+            try list.append(glyph_buffer);
+        }
+
+        std.sort.block(GlyphBuffer, list.items, {}, orderGlyphBuffer);
+
+        var buffered_writer = std.io.bufferedWriter(dst_stream);
+        const writer = buffered_writer.writer();
+
+        try writer.writeInt(u32, 0x4c2b8688, .little);
+        try writer.writeInt(u32, @as(u32, @intCast(list.items.len)), .little);
+
+        var run_offset: u32 = 0;
+
+        for (list.items) |glyph| {
+            try writer.writeInt(u32, @as(u32, @bitCast(CodepointAdvancePair{
+                .codepoint = glyph.codepoint,
+                .advance = glyph.advance,
+            })), .little);
+            try writer.writeInt(u32, run_offset, .little);
+
+            run_offset += @as(u32, @intCast(glyph.code.len));
+        }
+
+        for (list.items) |glyph| {
+            try writer.writeAll(glyph.code);
+        }
+
+        try buffered_writer.flush();
+    }
+
+    pub const GlyphScriptMeta = struct {
+        advance: u8,
+    };
+
+    pub fn compileGlyphScript(script: []const u8, writer: anytype) !GlyphScriptMeta {
+        var meta: GlyphScriptMeta = .{ .advance = 0 };
+
+        var decoder = GlyphScriptDecoder{ .slice = script };
+        try decoder.compileCommandSequence(&meta.advance, writer);
+
+        return meta;
+    }
+
+    pub const GlyphScriptDecoder = struct {
         slice: []const u8,
         i: usize = 0,
 
-        fn compileCommandSequence(decoder: *Decoder, advance: *u8, dst_writer: anytype) !void {
+        fn compileCommandSequence(decoder: *GlyphScriptDecoder, advance: *u8, dst_writer: anytype) !void {
             var buffered_writer = std.io.bufferedWriter(dst_writer);
             const writer = buffered_writer.writer();
 
@@ -185,7 +272,7 @@ pub const FontCompiler = struct {
             try writer.writeInt(i8, pt.y, .little);
         }
 
-        fn fetchCommand(decoder: *Decoder) !?Command {
+        fn fetchCommand(decoder: *GlyphScriptDecoder) !?Command {
             const c = decoder.fetchChar() orelse return null;
 
             return switch (c) {
@@ -203,13 +290,13 @@ pub const FontCompiler = struct {
             };
         }
 
-        fn fetchPoint(decoder: *Decoder) !Point {
+        fn fetchPoint(decoder: *GlyphScriptDecoder) !Point {
             const x = try decoder.fetchNumber(i8);
             const y = try decoder.fetchNumber(i8);
             return Point{ .x = x, .y = y };
         }
 
-        fn fetchNumber(decoder: *Decoder, comptime T: type) error{ MissingNumber, InvalidCharacter, Overflow }!T {
+        fn fetchNumber(decoder: *GlyphScriptDecoder, comptime T: type) error{ MissingNumber, InvalidCharacter, Overflow }!T {
             var factor: i16 = 1;
             var c = decoder.fetchChar() orelse return error.MissingNumber;
             if (c == '-') {
@@ -223,7 +310,7 @@ pub const FontCompiler = struct {
             return std.math.cast(T, factor * digit) orelse return error.Overflow;
         }
 
-        fn fetchChar(decoder: *Decoder) ?u8 {
+        fn fetchChar(decoder: *GlyphScriptDecoder) ?u8 {
             if (decoder.i >= decoder.slice.len)
                 return null;
 
@@ -247,87 +334,6 @@ pub const FontCompiler = struct {
         offset: u32,
         advance: u8,
     };
-
-    fn orderGlyphBuffer(_: void, a: GlyphBuffer, b: GlyphBuffer) bool {
-        return a.codepoint < b.codepoint;
-    }
-
-    pub fn compile(allocator: std.mem.Allocator, src_stream: anytype, dst_stream: anytype) !void {
-        var buffered_reader = std.io.bufferedReader(src_stream);
-
-        const reader = buffered_reader.reader();
-
-        var temp_storage = std.heap.ArenaAllocator.init(allocator);
-        defer temp_storage.deinit();
-
-        var list = std.ArrayList(GlyphBuffer).init(temp_storage.allocator());
-        defer list.deinit();
-
-        var line_buffer: [1024]u8 = undefined;
-        while (try reader.readUntilDelimiterOrEof(&line_buffer, '\n')) |raw_line| {
-            const line = std.mem.trim(u8, raw_line, "\r\n");
-            if (line.len == 0)
-                continue;
-
-            var utf8_view = try std.unicode.Utf8View.init(line);
-
-            var iterator = utf8_view.iterator();
-
-            const codepoint = iterator.nextCodepoint() orelse return error.InvalidFormat;
-
-            if (iterator.nextCodepoint() != @as(?u21, ':'))
-                return error.InvalidFormat;
-
-            var stream_buffer = std.ArrayList(u8).init(temp_storage.allocator());
-            defer stream_buffer.deinit();
-
-            var decoder = Decoder{
-                .slice = line[iterator.i..],
-            };
-
-            var glyph_buffer = GlyphBuffer{
-                .codepoint = codepoint,
-                .code = undefined,
-                .offset = undefined,
-                .advance = undefined,
-            };
-
-            try decoder.compileCommandSequence(
-                &glyph_buffer.advance,
-                stream_buffer.writer(),
-            );
-
-            glyph_buffer.code = try stream_buffer.toOwnedSlice();
-
-            try list.append(glyph_buffer);
-        }
-
-        std.sort.block(GlyphBuffer, list.items, {}, orderGlyphBuffer);
-
-        var buffered_writer = std.io.bufferedWriter(dst_stream);
-        const writer = buffered_writer.writer();
-
-        try writer.writeInt(u32, 0x4c2b8688, .little);
-        try writer.writeInt(u32, @as(u32, @intCast(list.items.len)), .little);
-
-        var run_offset: u32 = 0;
-
-        for (list.items) |glyph| {
-            try writer.writeInt(u32, @as(u32, @bitCast(CodepointAdvancePair{
-                .codepoint = glyph.codepoint,
-                .advance = glyph.advance,
-            })), .little);
-            try writer.writeInt(u32, run_offset, .little);
-
-            run_offset += @as(u32, @intCast(glyph.code.len));
-        }
-
-        for (list.items) |glyph| {
-            try writer.writeAll(glyph.code);
-        }
-
-        try buffered_writer.flush();
-    }
 };
 
 pub const RasterOptions = struct {
@@ -514,7 +520,7 @@ pub fn Rasterizer(
     };
 }
 
-const CodepointAdvancePair = packed struct(u32) {
+pub const CodepointAdvancePair = packed struct(u32) {
     codepoint: u24,
     advance: u8,
 };
