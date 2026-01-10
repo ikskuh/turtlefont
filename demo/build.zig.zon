@@ -1,5 +1,6 @@
 .{
-    .name = "turtlefont-demo",
+    .name = .turtlefont_demo,
+    .fingerprint = 0x8516b37f2367737d,
     .version = "0.1.0",
 
     .dependencies = .{

@@ -222,7 +222,7 @@ pub const FontCompiler = struct {
         advance: u8,
     };
 
-    pub fn compileGlyphScript(script: []const u8, writer: anytype) !GlyphScriptMeta {
+    pub fn compileGlyphScript(script: []const u8, writer: *std.Io.Writer) !GlyphScriptMeta {
         var meta: GlyphScriptMeta = .{ .advance = 0 };
 
         var decoder = GlyphScriptDecoder{ .slice = script };
@@ -235,10 +235,7 @@ pub const FontCompiler = struct {
         slice: []const u8,
         i: usize = 0,
 
-        fn compileCommandSequence(decoder: *GlyphScriptDecoder, advance: *u8, dst_writer: anytype) !void {
-            var buffered_writer = std.io.bufferedWriter(dst_writer);
-            const writer = buffered_writer.writer();
-
+        fn compileCommandSequence(decoder: *GlyphScriptDecoder, advance: *u8, writer: *std.Io.Writer) !void {
             advance.* = 0;
 
             while (try decoder.fetchCommand()) |cmd| {
@@ -264,10 +261,9 @@ pub const FontCompiler = struct {
                 }
             }
             try writer.writeByte(@as(u8, @bitCast(EncodedCommand{ .cmd = .end })));
-            try buffered_writer.flush();
         }
 
-        fn writePoint(writer: anytype, pt: Point) !void {
+        fn writePoint(writer: *std.Io.Writer, pt: Point) !void {
             try writer.writeInt(i8, pt.x, .little);
             try writer.writeInt(i8, pt.y, .little);
         }
